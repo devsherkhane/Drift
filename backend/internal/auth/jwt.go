@@ -1,10 +1,12 @@
 package auth
 
 import (
+	"log"
 	"os"
 	"time"
 
 	"github.com/golang-jwt/jwt/v4"
+	"github.com/joho/godotenv"
 )
 
 type Claims struct {
@@ -12,9 +14,24 @@ type Claims struct {
 	jwt.StandardClaims
 }
 
-// Create a helper function to get the secret key dynamically
+var jwtSecret []byte
+
+// init runs automatically when the package is imported
+func init() {
+	// Load .env if it hasn't been loaded yet
+	if err := godotenv.Load(); err != nil {
+		log.Println("Note: .env file not found in auth package, relying on environment variables")
+	}
+	
+	secret := os.Getenv("JWT_SECRET_KEY")
+	if secret == "" {
+		log.Fatal("JWT_SECRET_KEY is not set in environment variables")
+	}
+	jwtSecret = []byte(secret)
+}
+
 func getSecretKey() []byte {
-	return []byte(os.Getenv("JWT_SECRET_KEY"))
+	return jwtSecret
 }
 
 func GenerateToken(userID int) (string, error) {

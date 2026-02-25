@@ -93,3 +93,19 @@ func DeleteBoard(c *gin.Context) {
 
     c.JSON(http.StatusOK, gin.H{"message": "Board deleted"})
 }
+
+func GetBoard(c *gin.Context) {
+    userID := c.MustGet("userID").(int)
+    boardID := c.Param("id")
+
+    var b models.Board
+    query := "SELECT id, title, owner_id FROM boards WHERE id = ? AND owner_id = ?"
+    err := database.DB.QueryRow(query, boardID, userID).Scan(&b.ID, &b.Title, &b.OwnerID)
+
+    if err != nil {
+        c.JSON(http.StatusNotFound, gin.H{"error": "Board not found"})
+        return
+    }
+
+    c.JSON(http.StatusOK, b)
+}

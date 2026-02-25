@@ -7,10 +7,16 @@ import (
 	"os"
 
 	_ "github.com/go-sql-driver/mysql"
+	"github.com/joho/godotenv"
 )
 
 var DB *sql.DB
 
+func init() {
+	if err := godotenv.Load(); err != nil {
+		log.Println("Note: .env file not found in database package")
+	}
+}
 func InitDB() {
 	var err error
 	// Use os.Getenv to retrieve credentials from the environment
@@ -19,7 +25,7 @@ func InitDB() {
 	host := os.Getenv("DB_HOST")
 	dbName := os.Getenv("DB_NAME")
 
-    fmt.Printf("Connecting to DB: %s at %s\n", dbName, host)
+	fmt.Printf("Connecting to DB: %s at %s\n", dbName, host)
 
 	dsn := fmt.Sprintf("%s:%s@tcp(%s)/%s?parseTime=true", username, password, host, dbName)
 	DB, err = sql.Open("mysql", dsn)
