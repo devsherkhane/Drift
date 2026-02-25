@@ -24,35 +24,43 @@ type LoginRequest struct {
 
 func Register(c *gin.Context) {
 	var req RegisterRequest
+	// Gin's ShouldBindJSON already checks for required fields and email format 
+	// based on the struct tags you defined.
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input: ensure email is valid and password is at least 6 characters"})
 		return
 	}
 
-	// 1. Hash the password
+	// 1. Check if the user already exists
+	var exists bool
+	checkQuery := "SELECT EXISTS(SELECT 1 FROM users WHERE email = ? OR username = ?)"
+	err := database.DB.QueryRow(checkQuery, req.Email, req.Username).Scan(&exists)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Database check failed"})
+		return
+	}
+
+	if exists {
+		c.JSON(http.StatusConflict, gin.H{"error": "Username or Email already taken"})
+		return
+	}
+
+	// 2. Hash the password
 	hashed, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to hash password"})
 		return
 	}
 
+	// 3. Insert the new user
 	query := "INSERT INTO users (username, email, password_hash) VALUES (?, ?, ?)"
 	result, err := database.DB.Exec(query, req.Username, req.Email, string(hashed))
 	if err != nil {
-		log.Printf("Database Insert Error: %v", err) // Log the exact error
-
-		// MySQL error code for duplicate entry is usually handled here
-		// For a simpler implementation, we check the general error
-		c.JSON(http.StatusConflict, gin.H{
-			"error":   "User already exists or registration failed",
-			"details": err.Error(),
-		})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Registration failed"})
 		return
 	}
 
-	// Optional: Get the new user ID
 	id, _ := result.LastInsertId()
-
 	c.JSON(http.StatusCreated, gin.H{
 		"message": "User registered successfully",
 		"user_id": id,

@@ -6,6 +6,8 @@ import (
 	"github.com/devsherkhane/trello-clone/internal/auth"
 	"github.com/devsherkhane/trello-clone/internal/database"
 	"github.com/devsherkhane/trello-clone/internal/handlers"
+	"github.com/devsherkhane/trello-clone/internal/logger"
+	"github.com/devsherkhane/trello-clone/internal/middleware"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 )
@@ -14,11 +16,13 @@ func main() {
 	if err := godotenv.Load(); err != nil {
 		log.Println("No .env file found")
 	}
-
+	logger.SetupLogging()
 	// 2. Initialize the database connection
 	database.InitDB()
 
 	r := gin.Default()
+
+	r.Use(middleware.ErrorHandler())
 
 	// 3. CORS Middleware to allow requests from your frontend
 	r.Use(func(c *gin.Context) {
