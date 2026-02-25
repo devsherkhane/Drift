@@ -30,3 +30,12 @@ type Card struct {
     Description string `json:"description"`
     Position    int    `json:"position"` // Determines the top-to-bottom order
 }
+
+// CardAttachment represents a file linked to a card
+type CardAttachment struct {
+    ID         int    `json:"id"`
+    CardID     int    `json:"card_id"`
+    FilePath   string `json:"file_path"`
+    FileName   string `json:"file_name"`
+    UploadedAt string `json:"uploaded_at"`
+}

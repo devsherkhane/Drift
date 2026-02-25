@@ -1,11 +1,13 @@
 package handlers
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 
 	"github.com/devsherkhane/trello-clone/internal/database"
 	"github.com/devsherkhane/trello-clone/internal/models"
+	"github.com/devsherkhane/trello-clone/internal/utils"
 	"github.com/gin-gonic/gin"
 )
 
@@ -145,42 +147,47 @@ func DeleteCard(c *gin.Context) {
 }
 
 // MoveCard handles updating a card's position or moving it to a different list
+// MoveCard handles updating a card's position or moving it to a different list
 func MoveCard(c *gin.Context) {
-	userID := c.MustGet("userID").(int)
-	cardID := c.Param("id")
+    userID := c.MustGet("userID").(int)
+    cardID := c.Param("id")
 
-	var input struct {
-		NewListID   int `json:"new_list_id" binding:"required"`
-		NewPosition int `json:"new_position"`
-	}
+    var input struct {
+        NewListID   int `json:"new_list_id" binding:"required"`
+        NewPosition int `json:"new_position"`
+    }
 
-	if err := c.ShouldBindJSON(&input); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
-		return
-	}
+    if err := c.ShouldBindJSON(&input); err != nil {
+        c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
+        return
+    }
 
-	// Security Check: Ensure the user owns the board where the card is moving
-	var ownerID int
-	err := database.DB.QueryRow(`
-        SELECT b.owner_id 
-        FROM boards b 
-        JOIN lists l ON b.id = l.board_id 
-        WHERE l.id = ?`, input.NewListID).Scan(&ownerID)
+    // 1. Fetch the Board ID and verify ownership in one query
+    var boardID int
+    var ownerID int
+    err := database.DB.QueryRow(`
+        SELECT l.board_id, b.owner_id 
+        FROM lists l 
+        JOIN boards b ON l.board_id = b.id 
+        WHERE l.id = ?`, input.NewListID).Scan(&boardID, &ownerID)
 
-	if err != nil || ownerID != userID {
-		c.JSON(http.StatusForbidden, gin.H{"error": "Unauthorized access to destination list"})
-		return
-	}
+    if err != nil || ownerID != userID {
+        c.JSON(http.StatusForbidden, gin.H{"error": "Unauthorized access to destination list"})
+        return
+    }
 
-	// Update the card's list and position
-	query := "UPDATE cards SET list_id = ?, position = ? WHERE id = ?"
-	_, err = database.DB.Exec(query, input.NewListID, input.NewPosition, cardID)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to move card"})
-		return
-	}
+    // 2. Update the card's list and position
+    query := "UPDATE cards SET list_id = ?, position = ? WHERE id = ?"
+    _, err = database.DB.Exec(query, input.NewListID, input.NewPosition, cardID)
+    if err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to move card"})
+        return
+    }
 
-	c.JSON(http.StatusOK, gin.H{"message": "Card moved successfully"})
+    // 3. Now boardID is defined and can be used for logging
+    utils.LogActivity(userID, boardID, fmt.Sprintf("Moved card %s to list %d at position %d", cardID, input.NewListID, input.NewPosition))
+
+    c.JSON(http.StatusOK, gin.H{"message": "Card moved successfully"})
 }
 
 // SearchCards looks for cards matching a query with pagination support

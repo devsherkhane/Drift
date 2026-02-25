@@ -22,6 +22,8 @@ func main() {
 
 	r := gin.Default()
 
+	r.Static("/uploads", "./uploads")
+
 	r.Use(middleware.ErrorHandler())
 
 	// 3. CORS Middleware to allow requests from your frontend
@@ -68,8 +70,12 @@ func main() {
 		api.DELETE("/cards/:id", handlers.DeleteCard)
 		api.PATCH("/cards/:id/move", handlers.MoveCard)
 		api.GET("/search", handlers.SearchCards)
+		api.GET("/cards/:id/attachments", handlers.GetAttachmentsByCard)
 
 		api.PUT("/profile", handlers.UpdateProfile)
+
+		api.POST("/attachments", handlers.UploadAttachment)
+		api.GET("/boards/:id/activity", handlers.GetActivityLogs)
 
 	}
 

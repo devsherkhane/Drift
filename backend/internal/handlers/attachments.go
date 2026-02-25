@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/devsherkhane/trello-clone/internal/database"
+	"github.com/devsherkhane/trello-clone/internal/models"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )
@@ -55,4 +56,43 @@ func UploadAttachment(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "File uploaded successfully", "path": uploadPath})
+}
+
+// GetAttachmentsByCard retrieves all files for a specific card
+func GetAttachmentsByCard(c *gin.Context) {
+	userID := c.MustGet("userID").(int)
+	cardID := c.Param("id")
+
+	// Security Check: Verify user owns the board this card belongs to
+	var ownerID int
+	err := database.DB.QueryRow(`
+        SELECT b.owner_id FROM boards b
+        JOIN lists l ON b.id = l.board_id
+        JOIN cards c ON l.id = c.list_id
+        WHERE c.id = ?`, cardID).Scan(&ownerID)
+
+	if err != nil || ownerID != userID {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Unauthorized access to these attachments"})
+		return
+	}
+
+	var attachments []models.CardAttachment
+	query := "SELECT id, card_id, file_path, file_name, uploaded_at FROM card_attachments WHERE card_id = ?"
+
+	rows, err := database.DB.Query(query, cardID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch attachments"})
+		return
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var a models.CardAttachment
+		if err := rows.Scan(&a.ID, &a.CardID, &a.FilePath, &a.FileName, &a.UploadedAt); err != nil {
+			continue
+		}
+		attachments = append(attachments, a)
+	}
+
+	c.JSON(http.StatusOK, attachments)
 }

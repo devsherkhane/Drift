@@ -109,3 +109,33 @@ func GetBoard(c *gin.Context) {
 
     c.JSON(http.StatusOK, b)
 }
+
+// GetActivityLogs retrieves the history for a specific board
+func GetActivityLogs(c *gin.Context) {
+	userID := c.MustGet("userID").(int)
+	boardID := c.Param("id")
+
+	// Security Check: Ensure user owns the board
+	var ownerID int
+	err := database.DB.QueryRow("SELECT owner_id FROM boards WHERE id = ?", boardID).Scan(&ownerID)
+	if err != nil || ownerID != userID {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Unauthorized access to logs"})
+		return
+	}
+
+	rows, err := database.DB.Query("SELECT action_text, created_at FROM activity_logs WHERE board_id = ? ORDER BY created_at DESC LIMIT 50", boardID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch logs"})
+		return
+	}
+	defer rows.Close()
+
+	var logs []gin.H
+	for rows.Next() {
+		var action, createdAt string
+		rows.Scan(&action, &createdAt)
+		logs = append(logs, gin.H{"action": action, "created_at": createdAt})
+	}
+
+	c.JSON(http.StatusOK, logs)
+}
