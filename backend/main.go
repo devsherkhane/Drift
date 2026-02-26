@@ -11,8 +11,8 @@ import (
 	"github.com/devsherkhane/trello-clone/internal/notifications"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
-	"github.com/swaggo/files"
-	"github.com/swaggo/gin-swagger"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
 // @title Trello Clone API
@@ -52,8 +52,11 @@ func main() {
 	})
 
 	// Public Routes
-	r.POST("/register", handlers.Register)
-	r.POST("/login", handlers.Login)
+	apiPublic := r.Group("/api")
+	{
+		apiPublic.POST("/register", handlers.Register)
+		apiPublic.POST("/login", handlers.Login)
+	}
 
 	// Protected Routes (Require JWT)
 	api := r.Group("/api")
