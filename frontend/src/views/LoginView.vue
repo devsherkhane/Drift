@@ -63,50 +63,51 @@ const handleLogin = async () => {
     justify-content: center;
     align-items: center;
     min-height: 100vh;
-    background: #f0f9ff;
+    background: #14b8a6;
     padding: 20px;
 }
 
 .auth-card {
-    background: white;
-    padding: 60px 50px;
+    background:white;
+    padding: 60px 40px;
     border-radius: 24px;
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.04);
     width: 100%;
-    max-width: 480px;
+    max-width: 440px;
+    border: 1px solid #f1f5f9;
 }
 
 .auth-header {
     text-align: center;
-    margin-bottom: 30px;
+    margin-bottom: 32px;
 }
 
 .auth-header h1 {
     color: #115e59; /* Darker Teal */
     font-size: 38px;
     font-weight: 900;
-    letter-spacing: -1px;
+    letter-spacing: -1.5px;
     margin-bottom: 8px;
 }
 
 .auth-header p {
-  color: #64748b;
+  color: #94a3b8; /* Slate 400 */
   font-size: 16px;
   font-weight: 500;
 }
 
 .form-group {
-    margin-bottom: 20px;
+    margin-bottom: 24px;
 }
 
 .form-group label {
     display: block;
     font-size: 12px;
     font-weight: 700;
-    color: #64748b;
+    color: #64748b; /* Slate 500 */
     margin-bottom: 12px;
     text-transform: uppercase;
-    letter-spacing: 1px;
+    letter-spacing: 1.5px;
 }
 
 input {
@@ -114,11 +115,10 @@ input {
     padding: 14px 20px;
     border: 1px solid #f1f5f9;
     border-radius: 12px;
-    background-color: #ffffff;
+    background-color: #fafafa;
     font-size: 15px;
     color: #0f172a;
     transition: all 0.2s ease;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.02);
 }
 
 input:focus {
@@ -138,6 +138,11 @@ input:focus {
     color: #0ea5e9;
     text-decoration: none;
     font-weight: 600;
+    transition: color 0.2s;
+}
+
+.forgot-btn:hover {
+    color: #0ea5e9;
 }
 
 .btn-primary {
@@ -146,9 +151,13 @@ input:focus {
     padding: 16px;
     font-size: 16px;
     background: #14b8a6;
+    color: white;
+    border: none;
     border-radius: 12px;
     font-weight: 700;
-    box-shadow: 0 4px 12px rgba(20, 184, 166, 0.2);
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(20, 184, 166, 0.3);
+    transition: all 0.2s;
 }
 
 .btn-primary:hover {
@@ -159,16 +168,16 @@ input:focus {
 .error-text {
     color: #ef4444;
     font-size: 14px;
-    margin-top: 15px;
+    margin-top: 20px;
     text-align: center;
     background: #fef2f2;
-    padding: 10px;
-    border-radius: var(--border-radius-sm);
+    padding: 12px;
+    border-radius: 10px;
     border: 1px solid #fee2e2;
 }
 
 .auth-footer {
-  margin-top: 30px;
+  margin-top: 32px;
   text-align: center;
   font-size: 14px;
   color: #64748b;
@@ -178,7 +187,7 @@ input:focus {
   color: #14b8a6;
   font-weight: 700;
   text-decoration: none;
-  transition: color 0.2s;
+  transition: all 0.2s;
 }
 
 .auth-footer a:hover {
