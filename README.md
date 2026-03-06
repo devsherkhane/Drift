@@ -2,7 +2,7 @@
 
 [![Go Version](https://img.shields.io/badge/Go-1.18+-00ADD8?style=flat&logo=go)](https://golang.org/)
 [![Vue Version](https://img.shields.io/badge/Vue-3.0-4FC08D?style=flat&logo=vue.js)](https://vuejs.org/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 
 A high-performance, real-time project management tool built with **Go (Gin)** and **Vue 3 (Vite)**. Featuring a modern "Vibrant Aurora" UI with high-energy glassmorphism, real-time WebSocket sync, and intuitive drag-and-drop mechanics.
 
