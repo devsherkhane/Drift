@@ -3,7 +3,7 @@
 A high-performance, real-time project management application featuring a **Go (Gin)** backend and a reactive **Vue 3** frontend. This platform provides a seamless task management experience through a professional glassmorphism interface, integrated drag-and-drop functionality, and live synchronization powered by WebSockets.
 
 ---
-
+ 
 ## Key Features
 
 * **Real-Time Synchronization:** Utilizes WebSockets for instant state updates across all connected clients. Card movements and content edits are reflected globally in real-time.
