@@ -1,78 +1,35 @@
-#  Trello Clone 
+# Trello Clone
 
-An intuitive, real-time project management tool built with a high-performance **Go (Gin)** backend and a reactive **Vue 3** frontend. It features a modern  UI with professional glassmorphism, seamless drag-and-drop task organization, and live WebSocket synchronization to keep teams perfectly in sync.
-
-
-
-## ✨ Key Features
-
-- **⚡ Real-Time Sync:** Instant updates across all connected clients using WebSockets. When a teammate moves a card, you see it instantly.
-- **🖐️ Intuitive Drag & Drop:** Fluid card and list reordering for effortless, visual task management.
-- **🔐 Secure Authentication:** Full auth suite featuring JWT-based login, signup, password resets, and secure session management.
-- **🎨 Premium UI/UX:** Custom "Vibrant Aurora" dark theme and a pristine "Clean Minimalist" white theme, featuring deep slate cards, teal accents, and smooth hover micro-animations.
-- **🤝 Collaboration Hub:** Share boards with teammates, manage access levels, and respond to pending board invitations directly from your dashboard.
-- **🔍 Advanced Search:** Rapidly filter and locate cards across all your workspaces.
-- **👤 Profile Management:** Personalized user profiles with avatar uploads and account settings.
-
-## 🛠️ Tech Stack
-
-**Frontend:**
-- **Vue 3** (Composition API, `<script setup>`)
-- **Vite** (Lightning-fast build tool)
-- **Vue Router** (Client-side routing)
-- **Vanilla CSS** (Custom design tokens, CSS variables, and flex/grid layouts)
-
-**Backend:**
-- **Go (Golang)** (High concurrency and performance)
-- **Gin Web Framework** (Robust HTTP routing)
-- **GORM** (Developer-friendly ORM)
-- **Gorilla WebSockets** (Real-time communication)
-- **MySQL** (Relational data storage)
+A high-performance, real-time project management application featuring a **Go (Gin)** backend and a reactive **Vue 3** frontend. This platform provides a seamless task management experience through a professional glassmorphism interface, integrated drag-and-drop functionality, and live synchronization powered by WebSockets.
 
 ---
 
-## 🚀 Getting Started
+## Key Features
 
-### Prerequisites
-- [Go 1.18+](https://golang.org/doc/install)
-- [Node.js v16+](https://nodejs.org/)
-- MySQL Server
+* **Real-Time Synchronization:** Utilizes WebSockets for instant state updates across all connected clients. Card movements and content edits are reflected globally in real-time.
+* **Drag-and-Drop Interface:** Fluid task organization and list reordering for intuitive workflow management.
+* **Secure Authentication:** Comprehensive security suite including JWT-based authentication, password hashing, secure session management, and password recovery flows.
+* **Professional UI/UX:** Features "Vibrant Aurora" (Dark Mode) and "Clean Minimalist" (Light Mode) themes. The design employs custom CSS variables, deep slate card aesthetics, and micro-animations for refined user interaction.
+* **Collaboration Management:** Tools for board sharing, granular access control, and an invitation system for team expansion.
+* **Advanced Filtering:** High-speed search functionality to locate specific cards and tasks across multiple workspaces.
+* **User Profiles:** Individualized account management including avatar customization and security settings.
 
-### 1. Database Setup
-Create a new MySQL database named `trello_clone`:
-```sql
-CREATE DATABASE trello_clone;
-```
+---
 
-### 2. Backend Initialization
-```bash
-# Navigate to the backend directory
-cd backend
+## Technical Architecture
 
-# Create your .env file
-cp .env.example .env 
-# (Make sure to configure your DB_DSN and JWT_SECRET inside .env)
+### Frontend
+* **Vue 3:** Built with the Composition API and `<script setup>` for optimal performance and maintainability.
+* **Vite:** Used as the build tool for rapid development and optimized production bundling.
+* **Vue Router:** Manages client-side navigation and route protection.
+* **Vanilla CSS:** Implements custom design tokens and flexible layouts without the overhead of heavy CSS frameworks.
 
-# Download Go modules
-go mod tidy
-
-# Start the Gin server (runs on :8080 by default)
-go run .
-```
-
-### 3. Frontend Initialization
-```bash
-# Open a new terminal and navigate to the frontend directory
-cd frontend
-
-# Install dependencies
-npm install
-
-# Start the Vite development server
-npm run dev
-```
-
-Your application should now be running locally! Navigate to `http://localhost:5173` (or the port Vite provides) in your browser.
+### Backend
+* **Go (Golang):** Leveraged for high concurrency, low latency, and robust backend performance.
+* **Gin Gonic:** High-performance HTTP web framework for routing and middleware management.
+* **GORM:** Provides an abstraction layer for database interactions and schema migrations.
+* **Gorilla WebSockets:** Manages bidirectional communication for live updates.
+* **MySQL:** Reliable relational storage for boards, cards, and user data.
 
 ---
 
