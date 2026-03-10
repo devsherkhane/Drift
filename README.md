@@ -32,4 +32,4 @@ A high-performance, real-time project management application featuring a **Go (G
 * **MySQL:** Reliable relational storage for boards, cards, and user data.
 
 ---
-
+ 
