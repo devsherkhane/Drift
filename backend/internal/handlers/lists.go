@@ -2,117 +2,99 @@ package handlers
 
 import (
 	"net/http"
+	"strconv"
+
+	"github.com/devsherkhane/trello-clone/internal/middleware"
 	"github.com/gin-gonic/gin"
-	"github.com/devsherkhane/trello-clone/internal/database"
-	"github.com/devsherkhane/trello-clone/internal/models"
 )
 
-// CreateList adds a new column to a board
-func CreateList(c *gin.Context) {
-    userID := c.MustGet("userID").(int)
-    var input struct {
-        BoardID int    `json:"board_id" binding:"required"`
-        Title   string `json:"title" binding:"required"`
-    }
+func (h *APIHandler) CreateList(c *gin.Context) {
+	var input struct {
+		BoardID int    `json:"board_id" binding:"required"`
+		Title   string `json:"title" binding:"required,max=255"`
+	}
 
-    if err := c.ShouldBindJSON(&input); err != nil {
-        c.JSON(http.StatusBadRequest, gin.H{"error": "Board ID and Title are required"})
-        return
-    }
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"errors": middleware.FormatValidationErrors(err)})
+		return
+	}
 
-    // Verify ownership
-    var ownerID int
-    err := database.DB.QueryRow("SELECT user_id FROM boards WHERE id = ?", input.BoardID).Scan(&ownerID)
-    if err != nil || ownerID != userID {
-        c.JSON(http.StatusForbidden, gin.H{"error": "Unauthorized access to this board"})
-        return
-    }
+	// Security: should verify user has access to board
+	userID := c.MustGet("userID").(int)
+	_, err := h.BoardService.GetBoardByID(input.BoardID, userID)
+	if err != nil {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Unauthorized access to board"})
+		return
+	}
 
-    // Atomic Insert to avoid race conditions on 'position'
-    query := `
-        INSERT INTO lists (board_id, title, position) 
-        SELECT ?, ?, COALESCE(MAX(position) + 1, 0) 
-        FROM lists WHERE board_id = ?`
-    
-    result, err := database.DB.Exec(query, input.BoardID, input.Title, input.BoardID)
-    if err != nil {
-        c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not create list"})
-        return
-    }
+	list, err := h.ListService.CreateList(input.BoardID, input.Title)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create list"})
+		return
+	}
 
-    id, _ := result.LastInsertId()
-    c.JSON(http.StatusCreated, gin.H{"id": id, "title": input.Title})
+	c.JSON(http.StatusCreated, list)
 }
 
-// GetListsByBoard retrieves all columns for a specific board
-func GetListsByBoard(c *gin.Context) {
-	boardID := c.Param("id") // We get the board ID from the URL
+func (h *APIHandler) GetLists(c *gin.Context) {
+	boardIDStr := c.Query("board_id")
+	if boardIDStr == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "board_id is required"})
+		return
+	}
+	boardID, _ := strconv.Atoi(boardIDStr)
 
-	var lists []models.List
-	query := "SELECT id, board_id, title, position FROM lists WHERE board_id = ? ORDER BY position ASC"
+	// Verify Board Access
+	userID := c.MustGet("userID").(int)
+	_, err := h.BoardService.GetBoardByID(boardID, userID)
+	if err != nil {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Unauthorized"})
+		return
+	}
 
-	rows, err := database.DB.Query(query, boardID)
+	lists, err := h.ListService.GetListsByBoard(boardID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch lists"})
 		return
 	}
-	defer rows.Close()
 
-	for rows.Next() {
-		var l models.List
-		if err := rows.Scan(&l.ID, &l.BoardID, &l.Title, &l.Position); err != nil {
-			continue
-		}
-		lists = append(lists, l)
+	if lists == nil {
+		c.JSON(http.StatusOK, []interface{}{})
+		return
 	}
 
 	c.JSON(http.StatusOK, lists)
 }
 
-// UpdateList changes the title of a list
-func UpdateList(c *gin.Context) {
-    userID := c.MustGet("userID").(int)
-    listID := c.Param("id")
-    var input struct {
-        Title string `json:"title" binding:"required"`
-    }
+func (h *APIHandler) UpdateList(c *gin.Context) {
+	listID, _ := strconv.Atoi(c.Param("id"))
+	
+	var input struct {
+		Title   string `json:"title" binding:"required,max=255"`
+	}
 
-    if err := c.ShouldBindJSON(&input); err != nil {
-        c.JSON(http.StatusBadRequest, gin.H{"error": "Title is required"})
-        return
-    }
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"errors": middleware.FormatValidationErrors(err)})
+		return
+	}
 
-    // Security check via JOIN with boards
-    query := `
-        UPDATE lists l 
-        JOIN boards b ON l.board_id = b.id 
-        SET l.title = ? 
-        WHERE l.id = ? AND b.user_id = ?`
-    
-    _, err := database.DB.Exec(query, input.Title, listID, userID)
-    if err != nil {
-        c.JSON(http.StatusInternalServerError, gin.H{"error": "Database error"})
-        return
-    }
+	err := h.ListService.UpdateListTitle(listID, input.Title)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update list"})
+		return
+	}
 
-    c.JSON(http.StatusOK, gin.H{"message": "List updated"})
+	c.JSON(http.StatusOK, gin.H{"message": "List updated successfully"})
 }
 
-// DeleteList removes a list and its cards
-func DeleteList(c *gin.Context) {
-    userID := c.MustGet("userID").(int)
-    listID := c.Param("id")
+func (h *APIHandler) DeleteList(c *gin.Context) {
+	listID, _ := strconv.Atoi(c.Param("id"))
 
-    query := `
-        DELETE l FROM lists l 
-        JOIN boards b ON l.board_id = b.id 
-        WHERE l.id = ? AND b.user_id = ?`
-    
-    _, err := database.DB.Exec(query, listID, userID)
-    if err != nil {
-        c.JSON(http.StatusInternalServerError, gin.H{"error": "Database error"})
-        return
-    }
+	err := h.ListService.DeleteList(listID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete list"})
+		return
+	}
 
-    c.JSON(http.StatusOK, gin.H{"message": "List deleted"})
+	c.JSON(http.StatusOK, gin.H{"message": "List deleted successfully"})
 }

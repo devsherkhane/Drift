@@ -1,0 +1,10 @@
+DROP TABLE IF EXISTS password_resets;
+DROP TABLE IF EXISTS activity_logs;
+DROP TABLE IF EXISTS card_labels;
+DROP TABLE IF EXISTS comments;
+DROP TABLE IF EXISTS attachments;
+DROP TABLE IF EXISTS cards;
+DROP TABLE IF EXISTS lists;
+DROP TABLE IF EXISTS board_collaborators;
+DROP TABLE IF EXISTS boards;
+DROP TABLE IF EXISTS users;

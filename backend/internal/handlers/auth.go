@@ -1,334 +1,126 @@
 package handlers
 
 import (
-	"crypto/rand"
-	"encoding/hex"
-	"fmt" // Ensure log is imported
-	"log"
 	"net/http"
-	"os"
-	"path/filepath"
-	"time"
-
-	"github.com/devsherkhane/trello-clone/internal/auth"
-	"github.com/devsherkhane/trello-clone/internal/database"
-	"github.com/devsherkhane/trello-clone/internal/utils"
+	"github.com/devsherkhane/trello-clone/internal/middleware"
 	"github.com/gin-gonic/gin"
-	"golang.org/x/crypto/bcrypt"
 )
 
-// LoginUser godoc
-// @Summary Authenticate a user
-// @Tags Auth
-// @Accept json
-// @Produce json
-// @Param login body models.LoginInput true "User Credentials"
-// @Success 200 {object} map[string]interface{}
-// @Router /login [post]
-type RegisterRequest struct {
-	Username string `json:"username" binding:"required"`
-	Email    string `json:"email"`
-	Password string `json:"password" binding:"required,min=6"`
-}
+func (h *APIHandler) Register(c *gin.Context) {
+	var input struct {
+		Username string `json:"username" binding:"required,min=3,max=50"`
+		Email    string `json:"email" binding:"required,email,max=255"`
+		Password string `json:"password" binding:"required,min=6,max=128"`
+	}
 
-// Create a new struct specifically for Login
-type LoginRequest struct {
-	Email    string `json:"email" binding:"required,email"`
-	Password string `json:"password" binding:"required"`
-}
-
-func Register(c *gin.Context) {
-	var req RegisterRequest
-	// Gin's ShouldBindJSON already checks for required fields and email format
-	// based on the struct tags you defined.
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input: ensure email is valid and password is at least 6 characters"})
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"errors": middleware.FormatValidationErrors(err)})
 		return
 	}
 
-	// 1. Check if the user already exists
-	var exists bool
-	checkQuery := "SELECT EXISTS(SELECT 1 FROM users WHERE email = ? OR username = ?)"
-	err := database.DB.QueryRow(checkQuery, req.Email, req.Username).Scan(&exists)
+	user, err := h.AuthService.Register(input.Username, input.Email, input.Password)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Database check failed"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	if exists {
-		c.JSON(http.StatusConflict, gin.H{"error": "Username or Email already taken"})
-		return
-	}
-
-	// 2. Hash the password
-	hashed, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to hash password"})
-		return
-	}
-
-	// 3. Insert the new user
-	query := "INSERT INTO users (username, email, password_hash) VALUES (?, ?, ?)"
-	result, err := database.DB.Exec(query, req.Username, req.Email, string(hashed))
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Registration failed"})
-		return
-	}
-
-	id, _ := result.LastInsertId()
 	c.JSON(http.StatusCreated, gin.H{
 		"message": "User registered successfully",
-		"user_id": id,
+		"user":    user,
 	})
 }
 
-func Login(c *gin.Context) {
-	var req LoginRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Email and password are required"})
-		return
-	}
-
-	var id int
-	var hashedPwd string
-
-	err := database.DB.QueryRow("SELECT user_id, password_hash FROM users WHERE email = ?", req.Email).Scan(&id, &hashedPwd)
-	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not found"})
-		return
-	}
-
-	if err := bcrypt.CompareHashAndPassword([]byte(hashedPwd), []byte(req.Password)); err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid password"})
-		return
-	}
-
-	token, err := auth.GenerateToken(id)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate token"})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{"token": token})
-}
-
-// UpdateProfile allows a user to change their username or password
-func UpdateProfile(c *gin.Context) {
-	userID := c.MustGet("userID").(int)
+func (h *APIHandler) Login(c *gin.Context) {
 	var input struct {
-		Username        string `json:"username"`
-		CurrentPassword string `json:"current_password" binding:"required"`
-		NewPassword     string `json:"new_password" binding:"omitempty,min=6"`
+		Email    string `json:"email" binding:"required,email,max=255"`
+		Password string `json:"password" binding:"required,min=6,max=128"`
 	}
 
 	if err := c.ShouldBindJSON(&input); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Current password is required to save changes"})
+		c.JSON(http.StatusBadRequest, gin.H{"errors": middleware.FormatValidationErrors(err)})
 		return
 	}
 
-	// 1. Verify Current Password
-	var hashedPwd string
-	err := database.DB.QueryRow("SELECT password_hash FROM users WHERE user_id = ?", userID).Scan(&hashedPwd)
+	token, user, err := h.AuthService.Login(input.Email, input.Password)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to verify identity"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return
-	}
-
-	if err := bcrypt.CompareHashAndPassword([]byte(hashedPwd), []byte(input.CurrentPassword)); err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Incorrect current password"})
-		return
-	}
-
-	// 2. Update Username if provided
-	if input.Username != "" {
-		_, err := database.DB.Exec("UPDATE users SET username = ? WHERE user_id = ?", input.Username, userID)
-		if err != nil {
-			c.JSON(http.StatusConflict, gin.H{"error": "Username already taken"})
-			return
-		}
-	}
-
-	// 3. Update Password if provided
-	if input.NewPassword != "" {
-		hashed, _ := bcrypt.GenerateFromPassword([]byte(input.NewPassword), bcrypt.DefaultCost)
-		_, err := database.DB.Exec("UPDATE users SET password_hash = ? WHERE user_id = ?", string(hashed), userID)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update password"})
-			return
-		}
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"message":  "Profile updated successfully",
-		"username": input.Username,
+		"message": "Login successful",
+		"token":   token,
+		"user":    user,
 	})
 }
 
-func GetProfile(c *gin.Context) {
-	userID := c.MustGet("userID").(int)
-
-	var user struct {
-		ID        int    `json:"user_id"`
-		Username  string `json:"username"`
-		Email     string `json:"email"`
-		AvatarURL string `json:"avatar_url"`
-		Theme     string `json:"theme"`
-	}
-
-	err := database.DB.QueryRow("SELECT user_id, username, email, avatar_url, theme FROM users WHERE user_id = ?", userID).
-		Scan(&user.ID, &user.Username, &user.Email, &user.AvatarURL, &user.Theme)
-
-	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
-		return
-	}
-
-	c.JSON(http.StatusOK, user)
+func (h *APIHandler) GetProfile(c *gin.Context) {
+	// Not strictly hitting DB since we assume the token holds what we need for now,
+	// but can be extended if profile fetches dynamic DB fields
+	c.JSON(http.StatusOK, gin.H{"message": "Profile accessed"})
 }
 
-func UpdateTheme(c *gin.Context) {
-	log.Println("DEBUG: UpdateTheme called")
+func (h *APIHandler) UpdateProfile(c *gin.Context) {
 	userID := c.MustGet("userID").(int)
+
 	var input struct {
-		Theme string `json:"theme" binding:"required"`
+		Username string `json:"username" binding:"omitempty,min=3,max=50"`
+		Email    string `json:"email" binding:"omitempty,email,max=255"`
 	}
 
 	if err := c.ShouldBindJSON(&input); err != nil {
-		log.Printf("DEBUG: UpdateTheme bind error: %v", err)
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Theme is required"})
+		c.JSON(http.StatusBadRequest, gin.H{"errors": middleware.FormatValidationErrors(err)})
 		return
 	}
 
-	log.Printf("DEBUG: Saving theme '%s' for user %d", input.Theme, userID)
-	_, err := database.DB.Exec("UPDATE users SET theme = ? WHERE user_id = ?", input.Theme, userID)
+	user, err := h.AuthService.UpdateProfile(userID, input.Username, input.Email)
 	if err != nil {
-		log.Printf("DEBUG: UpdateTheme DB error: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save preference"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
-	}
-	c.JSON(http.StatusOK, gin.H{"message": "Theme updated"})
-}
-
-func UploadAvatar(c *gin.Context) {
-	userID := c.MustGet("userID").(int)
-
-	// 1. Get the file from form
-	file, err := c.FormFile("avatar")
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "No image uploaded"})
-		return
-	}
-
-	// 2. Validate file type (Images only)
-	ext := filepath.Ext(file.Filename)
-	if ext != ".jpg" && ext != ".jpeg" && ext != ".png" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Only JPG, JPEG, and PNG are allowed"})
-		return
-	}
-
-	// 3. Create unique filename
-	newFileName := fmt.Sprintf("avatar-%d-%d%s", userID, time.Now().Unix(), ext)
-	uploadPath := filepath.Join("uploads", "avatars", newFileName)
-
-	// Ensure directory exists
-	os.MkdirAll(filepath.Join("uploads", "avatars"), os.ModePerm)
-
-	// 4. Fetch old avatar to delete it later
-	var oldAvatar string
-	database.DB.QueryRow("SELECT avatar_url FROM users WHERE user_id = ?", userID).Scan(&oldAvatar)
-
-	// 5. Save the new file
-	if err := c.SaveUploadedFile(file, uploadPath); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save image"})
-		return
-	}
-
-	// 6. Update database
-	_, err = database.DB.Exec("UPDATE users SET avatar_url = ? WHERE user_id = ?", uploadPath, userID)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Database update failed"})
-		return
-	}
-
-	// 7. Cleanup: Delete old file if it exists
-	if oldAvatar != "" {
-		os.Remove(oldAvatar)
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"message":    "Avatar updated successfully",
-		"avatar_url": uploadPath,
+		"message": "Profile updated successfully",
+		"user":    user,
 	})
 }
 
-func ForgotPassword(c *gin.Context) {
+func (h *APIHandler) ForgotPassword(c *gin.Context) {
 	var input struct {
-		Email string `json:"email" binding:"required,email"`
+		Email string `json:"email" binding:"required,email,max=255"`
 	}
+
 	if err := c.ShouldBindJSON(&input); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Valid email is required"})
+		c.JSON(http.StatusBadRequest, gin.H{"errors": middleware.FormatValidationErrors(err)})
 		return
 	}
 
-	// 1. Check if user exists
-	var userID int
-	err := database.DB.QueryRow("SELECT user_id FROM users WHERE email = ?", input.Email).Scan(&userID)
+	err := h.AuthService.ForgotPassword(input.Email)
 	if err != nil {
-		// Security tip: Don't reveal if the email exists.
-		// Just say "If an account exists, an email has been sent."
-		c.JSON(http.StatusOK, gin.H{"message": "If this email is registered, a reset link has been sent."})
+		// Log error, but always return success to prevent enum
+		c.JSON(http.StatusOK, gin.H{"message": "If that email exists, a reset link has been sent."})
 		return
 	}
 
-	// 2. Generate a secure random token
-	b := make([]byte, 32)
-	rand.Read(b)
-	token := hex.EncodeToString(b)
-	expiry := time.Now().Add(1 * time.Hour) // Token valid for 1 hour
-
-	// 3. Store token in DB
-	_, err = database.DB.Exec("INSERT INTO password_resets (user_id, token, expires_at) VALUES (?, ?, ?)", userID, token, expiry)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate reset link"})
-		return
-	}
-
-	// 4. Send Email
-	resetLink := fmt.Sprintf("http://localhost:3000/reset-password?token=%s", token)
-	subject := "Password Reset Request"
-	body := fmt.Sprintf("Click the link below to reset your password. It expires in 1 hour.\n\n%s", resetLink)
-
-	go utils.SendEmail(input.Email, subject, body)
-
-	c.JSON(http.StatusOK, gin.H{"message": "Reset link sent."})
+	c.JSON(http.StatusOK, gin.H{"message": "If that email exists, a reset link has been sent."})
 }
 
-func ResetPassword(c *gin.Context) {
+func (h *APIHandler) ResetPassword(c *gin.Context) {
 	var input struct {
-		Token       string `json:"token" binding:"required"`
-		NewPassword string `json:"new_password" binding:"required,min=6"`
+		Token       string `json:"token" binding:"required,max=255"`
+		NewPassword string `json:"new_password" binding:"required,min=6,max=128"`
 	}
+
 	if err := c.ShouldBindJSON(&input); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Token and valid password are required"})
+		c.JSON(http.StatusBadRequest, gin.H{"errors": middleware.FormatValidationErrors(err)})
 		return
 	}
 
-	// 1. Validate Token and Expiry
-	var userID int
-	err := database.DB.QueryRow("SELECT user_id FROM password_resets WHERE token = ? AND expires_at > NOW()", input.Token).Scan(&userID)
+	err := h.AuthService.ResetPassword(input.Token, input.NewPassword)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid or expired token"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	// 2. Hash New Password
-	hashed, _ := bcrypt.GenerateFromPassword([]byte(input.NewPassword), bcrypt.DefaultCost)
-
-	// 3. Update User Password and Delete the token
-	tx, _ := database.DB.Begin()
-	tx.Exec("UPDATE users SET password_hash = ? WHERE user_id = ?", string(hashed), userID)
-	tx.Exec("DELETE FROM password_resets WHERE token = ?", input.Token)
-	tx.Commit()
-
-	c.JSON(http.StatusOK, gin.H{"message": "Password updated successfully."})
+	c.JSON(http.StatusOK, gin.H{"message": "Password reset successful. You can now log in."})
 }

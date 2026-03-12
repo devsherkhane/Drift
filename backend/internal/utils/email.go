@@ -27,3 +27,9 @@ func SendInvitationEmail(toEmail string, boardTitle string) error {
 	body := fmt.Sprintf("You have been added as a collaborator to the board: %s", boardTitle)
 	return SendEmail(toEmail, subject, body)
 }
+
+func SendResetEmail(toEmail string, token string) error {
+	subject := "Trello Clone Password Reset Request"
+	body := fmt.Sprintf("Use the following token to reset your password: %s", token)
+	return SendEmail(toEmail, subject, body)
+}

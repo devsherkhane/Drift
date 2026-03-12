@@ -1,30 +1,41 @@
 package logger
 
 import (
-	"io"
 	"log"
 	"os"
 
-	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 )
 
-func SetupLogging() {
-	// Check the environment variable
-	env := os.Getenv("APP_ENV")
+// Log is the global logger instance
+var Log *zap.Logger
 
+// SetupLogging initializes the global zap logger
+func SetupLogging() {
+	var config zap.Config
+
+	// Determine if running in production or development
+	env := os.Getenv("ENV")
 	if env == "production" {
-		// In production, log to a file
-		f, err := os.OpenFile("server.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-		if err != nil {
-			log.Fatal("Could not create log file")
-		}
-		// Set Gin to write logs to the file
-		gin.DefaultWriter = io.MultiWriter(f)
-		// Set standard log to write to the file
-		log.SetOutput(f)
+		config = zap.NewProductionConfig()
+		config.EncoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder // Human readable timestamps
 	} else {
-		// In development, log to the console (default behavior)
-		gin.DefaultWriter = os.Stdout
-		log.SetOutput(os.Stdout)
+		config = zap.NewDevelopmentConfig()
+		config.EncoderConfig.EncodeLevel = zapcore.CapitalColorLevelEncoder // Colorize levels in dev
+	}
+
+	logger, err := config.Build()
+	if err != nil {
+		log.Fatalf("can't initialize zap logger: %v", err)
+	}
+
+	Log = logger
+}
+
+// Sync flushes any buffered log entries. Should be called before application exit.
+func Sync() {
+	if Log != nil {
+		_ = Log.Sync()
 	}
 }
