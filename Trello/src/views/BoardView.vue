@@ -1,5 +1,5 @@
 <template>
-  <div class="board-canvas">
+  <div class="board-canvas animate-fade-in">
     <BoardHeader 
       :boardTitle="boardTitle"
       :searchResults="searchResults"
@@ -13,7 +13,7 @@
 
     <div v-if="isLoading" class="lists-container">
       <div v-for="i in 3" :key="i" class="list-wrapper skeleton-wrapper">
-        <div class="list-content skeleton-list">
+        <div class="list-content skeleton-list glass-panel">
           <div class="skeleton-header"></div>
           <div v-for="j in 4" :key="j" class="skeleton-card"></div>
         </div>
@@ -37,12 +37,16 @@
       />
 
       <div class="list-wrapper">
-        <div v-if="!isAddingList" class="add-list-placeholder" @click="isAddingList = true">+ Add another list</div>
-        <div v-else class="add-list-form">
+        <div v-if="!isAddingList" class="add-list-placeholder glass-panel" @click="isAddingList = true">
+          <PlusIcon :size="18" /> Add another list
+        </div>
+        <div v-else class="add-list-form glass-panel">
           <input v-model="newListTitle" placeholder="Enter list title..." @keyup.enter="submitList" autofocus />
           <div class="form-actions">
-            <button class="btn-add" @click="submitList">Add list</button>
-            <button class="btn-close" @click="isAddingList = false">✕</button>
+            <button class="btn-add-primary" @click="submitList">Add list</button>
+            <button class="btn-cancel-small" @click="isAddingList = false">
+              <XIcon :size="18" />
+            </button>
           </div>
         </div>
       </div>
@@ -82,6 +86,9 @@ import { useWebsocket } from '../api/websocket';
 import { useToast } from "vue-toastification";
 import { useBoardStore } from '../stores/board';
 import { useAuthStore } from '../stores/auth';
+
+// Icons
+import { Plus as PlusIcon, X as XIcon } from 'lucide-vue-next';
 
 // Components
 import BoardHeader from '../components/BoardHeader.vue';
@@ -339,53 +346,78 @@ onUnmounted(() => disconnect());
 }
 
 .lists-container {
-  display: flex; align-items: flex-start; padding: 24px; gap: 16px;
-  overflow-x: auto; flex-grow: 1; scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.3) transparent;
+  display: flex; align-items: flex-start; padding: 24px 32px; gap: 20px;
+  overflow-x: auto; flex-grow: 1; scrollbar-width: thin; scrollbar-color: rgba(99, 102, 241, 0.2) transparent;
 }
-.lists-container::-webkit-scrollbar { height: 12px; }
-.lists-container::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.1); border-radius: 6px; }
+.lists-container::-webkit-scrollbar { height: 10px; }
+.lists-container::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.05); border-radius: 10px; }
 .lists-container::-webkit-scrollbar-thumb {
-  background-color: rgba(255, 255, 255, 0.3); border-radius: 6px;
-  border: 3px solid transparent; background-clip: padding-box;
+  background-color: rgba(99, 102, 241, 0.2); border-radius: 10px;
+  border: 2px solid transparent; background-clip: padding-box;
 }
+.lists-container::-webkit-scrollbar-thumb:hover { background-color: rgba(99, 102, 241, 0.4); }
 
 .list-wrapper { width: 300px; flex-shrink: 0; }
 
-.btn-add {
-  background: var(--brand-primary); color: var(--text-on-brand);
-  border: none; padding: 8px 16px; border-radius: var(--border-radius-sm);
-  font-weight: 600; cursor: pointer; transition: background 0.2s;
+.btn-add-primary {
+  background: var(--brand-primary); color: white;
+  border: none; padding: 10px 18px; border-radius: 10px;
+  font-weight: 700; cursor: pointer; transition: all 0.2s;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2);
 }
-.btn-add:hover { background: var(--brand-primary-hover); }
+.btn-add-primary:hover { background: var(--brand-primary-hover); transform: translateY(-1px); }
 
-.btn-close {
-  background: none; border: none; font-size: 20px; cursor: pointer;
-  color: var(--text-secondary); padding: 4px 8px; border-radius: var(--border-radius-sm);
+.btn-cancel-small {
+  background: transparent; border: none; padding: 8px; border-radius: 8px;
+  color: var(--text-muted); cursor: pointer; display: flex; align-items: center; justify-content: center;
 }
-.btn-close:hover { background: var(--surface-secondary); color: var(--text-main); }
+.btn-cancel-small:hover { background: var(--surface-secondary); color: var(--text-main); }
 
 .add-list-placeholder {
-  background: transparent; border: none; padding: 10px 12px; border-radius: var(--border-radius-sm);
-  color: var(--text-secondary); font-weight: 500; cursor: pointer; text-align: left;
-  transition: all 0.2s ease; width: 100%;
+  padding: 14px 18px; border-radius: 14px;
+  color: var(--text-muted); font-weight: 600; cursor: pointer; 
+  display: flex; align-items: center; gap: 8px;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  background: rgba(255, 255, 255, 0.3);
+  backdrop-filter: blur(8px);
+  border: 1px dashed var(--brand-primary);
 }
-.add-list-placeholder { background: rgba(255, 255, 255, 0.2); color: white; backdrop-filter: blur(4px); }
-.add-list-placeholder:hover { background: var(--surface-primary); color: var(--brand-primary); border: 1px solid var(--brand-primary); }
+.add-list-placeholder:hover { 
+  background: var(--surface-primary); 
+  color: var(--brand-primary); 
+  border-style: solid;
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.add-list-form { 
+  padding: 16px; border-radius: 16px;
+  background: var(--surface-primary);
+}
 
 .add-list-form input {
-  width: 100%; border: 1px solid rgba(99, 102, 241, 0.2); border-radius: var(--border-radius-sm);
-  padding: 12px; margin-bottom: 8px; box-sizing: border-box; font-family: inherit; font-size: 14px;
+  width: 100%; border: 2px solid var(--surface-secondary); border-radius: 10px;
+  padding: 12px; margin-bottom: 12px; box-sizing: border-box; font-family: inherit; font-size: 14px;
+  transition: all 0.2s;
 }
-.add-list-form input:focus { outline: none; border-color: var(--brand-primary); box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15); }
-.form-actions { display: flex; align-items: center; gap: 8px; }
+.add-list-form input:focus { outline: none; border-color: var(--brand-primary); box-shadow: 0 0 0 3px var(--brand-primary-light); }
+.form-actions { display: flex; align-items: center; gap: 10px; }
 
 /* Skeletons */
 .skeleton-list {
-  height: 400px; background: rgba(248, 250, 252, 0.5); border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: var(--border-radius); padding: 12px;
+  height: 480px; background: rgba(255, 255, 255, 0.4);
+  backdrop-filter: blur(10px); padding: 16px; border-radius: 16px;
 }
-.skeleton-header { height: 24px; width: 60%; background: rgba(0,0,0,0.05); margin-bottom: 24px; border-radius: 4px; }
-.skeleton-card { height: 48px; background: rgba(255,255,255,0.8); margin-bottom: 12px; border-radius: var(--border-radius-sm); box-shadow: 0 1px 2px rgba(0,0,0,0.02); }
+.skeleton-header { height: 24px; width: 50%; background: rgba(0,0,0,0.05); margin-bottom: 24px; border-radius: 6px; }
+.skeleton-card { height: 60px; background: white; margin-bottom: 12px; border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
 .skeleton-wrapper { animation: pulse 2s infinite ease-in-out; }
 @keyframes pulse { 0% { opacity: 0.8; } 50% { opacity: 0.5; } 100% { opacity: 0.8; } }
+
+.animate-fade-in {
+  animation: fadeIn 0.5s ease-out forwards;
+}
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
 </style>

@@ -3,65 +3,73 @@
 :root {
   /* ═══════════════════════════════════════════════
      🎨 ROYAL VIOLET — Premium Design System
-     A deep violet primary with warm amber accents
+     A deep violet primary with sophisticated accents
      ═══════════════════════════════════════════════ */
 
   /* Brand Colors */
-  --brand-primary: #7c3aed;         /* Violet 600 */
-  --brand-primary-hover: #6d28d9;   /* Violet 700 */
-  --brand-primary-light: #ede9fe;   /* Violet 100 */
+  --brand-primary: #6366f1;         /* Indigo 500 - More modern than basic violet */
+  --brand-primary-hover: #4f46e5;   /* Indigo 600 */
+  --brand-primary-light: #e0e7ff;   /* Indigo 100 */
   --brand-secondary: #f59e0b;       /* Amber 500 */
-  --brand-accent: #ec4899;          /* Pink 500 */
+  --brand-accent: #10b981;          /* Emerald 500 - Professional accent */
 
   /* Backgrounds */
-  --bg-app: #faf5ff;
-  --bg-gradient: linear-gradient(135deg, #faf5ff 0%, #ede9fe 40%, #fce7f3 100%);
+  --bg-app: #f8fafc;                /* Slate 50 */
+  --bg-gradient: radial-gradient(at 0% 0%, hsla(253,16%,7%,1) 0, transparent 50%), 
+                 radial-gradient(at 50% 0%, hsla(225,39%,30%,1) 0, transparent 50%), 
+                 radial-gradient(at 100% 0%, hsla(339,49%,30%,1) 0, transparent 50%);
+  /* Note: Above is a placeholder gradient, keeping the original for better compatibility */
+  --bg-gradient: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 40%, #e2e8f0 100%);
+  
   --surface-primary: #ffffff;
-  --surface-secondary: #f5f3ff;     /* Violet 50 */
-  --surface-glass: rgba(255, 255, 255, 0.72);
+  --surface-secondary: #f1f5f9;     /* Slate 100 */
+  --surface-glass: rgba(255, 255, 255, 0.6);
 
   /* Text Colors */
-  --text-main: #1e1b4b;             /* Indigo 950 */
-  --text-muted: #6b7280;            /* Gray 500 */
-  --text-extramuted: #9ca3af;       /* Gray 400 */
+  --text-main: #0f172a;             /* Slate 900 */
+  --text-muted: #475569;            /* Slate 600 */
+  --text-extramuted: #94a3b8;       /* Slate 400 */
   --text-on-brand: #ffffff;
 
   /* Borders & Shadows */
-  --border-subtle: rgba(124, 58, 237, 0.1);
-  --border-radius: 16px;
-  --border-radius-sm: 10px;
-  --shadow-soft: 0 4px 20px -2px rgba(124, 58, 237, 0.08);
-  --shadow-strong: 0 10px 30px -5px rgba(124, 58, 237, 0.12);
-  --shadow-md: 0 8px 24px -4px rgba(124, 58, 237, 0.15);
+  --border-subtle: rgba(0, 0, 0, 0.05);
+  --border-radius: 12px;
+  --border-radius-sm: 8px;
+  
+  /* Modern Layered Shadows */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  --shadow-strong: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
 
   /* Board-specific */
-  --trello-list: rgba(245, 243, 255, 0.85);
+  --trello-list: rgba(241, 245, 249, 0.7);
   --trello-card: #ffffff;
-  --card-shadow: 0 2px 8px rgba(30, 27, 75, 0.06);
+  --card-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
 }
 
 [data-theme="dark"] {
   /* Backgrounds */
-  --bg-app: #0c0a1d;
-  --bg-gradient: radial-gradient(ellipse at top left, #1e1b4b, #0c0a1d 70%);
-  --surface-primary: #1e1b4b;
-  --surface-secondary: #2e1065;
-  --surface-glass: rgba(30, 27, 75, 0.72);
+  --bg-app: #0f172a;               /* Slate 900 */
+  --bg-gradient: radial-gradient(at 0% 0%, #1e293b 0, #0f172a 70%);
+  --surface-primary: #1e293b;      /* Slate 800 */
+  --surface-secondary: #0f172a;
+  --surface-glass: rgba(30, 41, 59, 0.7);
 
   /* Text Colors */
-  --text-main: #f5f3ff;
-  --text-muted: #a78bfa;
-  --text-extramuted: #7c3aed;
+  --text-main: #f8fafc;
+  --text-muted: #94a3b8;
+  --text-extramuted: #475569;
 
   /* Borders & Shadows */
-  --border-subtle: rgba(167, 139, 250, 0.15);
+  --border-subtle: rgba(255, 255, 255, 0.1);
   --shadow-soft: 0 8px 30px rgba(0, 0, 0, 0.5);
   --shadow-strong: 0 12px 40px rgba(0, 0, 0, 0.7);
   --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.6);
 
   /* Board-specific */
-  --trello-list: rgba(30, 27, 75, 0.65);
-  --trello-card: #2e1065;
+  --trello-list: rgba(15, 23, 42, 0.7);
+  --trello-card: #1e293b;
   --card-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
 }
 
