@@ -4,7 +4,7 @@ services:
     name: drift-db
     env: docker
     dockerContext: .
-    dockerFilePath: db.Dockerfile
+    dockerfile: db.Dockerfile
     plan: free
     envVars:
       - key: MYSQL_ROOT_PASSWORD
