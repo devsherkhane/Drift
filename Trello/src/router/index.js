@@ -4,15 +4,22 @@ import ProfileView from '../views/ProfileView.vue'
 
 const routes = [
     {
+        path: '/welcome',
+        name: 'Landing',
+        component: () => import('../views/LandingView.vue'),
+        meta: { guestOnly: true }
+    },
+    {
         path: '/login',
         name: 'Login',
-        component: () => import('../views/LoginView.vue')
+        component: () => import('../views/LoginView.vue'),
+        meta: { guestOnly: true }
     },
     {
         path: '/',
         name: 'Dashboard',
         component: () => import('../views/DashboardView.vue'),
-        meta: { requiresAuth: true } // Custom field to protect this route
+        meta: { requiresAuth: true }
     },
     {
         path: '/board/:id',
@@ -21,15 +28,22 @@ const routes = [
         meta: { requiresAuth: true }
     },
     {
+        path: '/board/:id/activity',
+        name: 'BoardActivity',
+        component: () => import('../views/BoardActivityView.vue'),
+        meta: { requiresAuth: true }
+    },
+    {
         path: '/signup',
         name: 'Signup',
-        component: () => import('../views/SignUpView.vue')
+        component: () => import('../views/SignUpView.vue'),
+        meta: { guestOnly: true }
     },
     {
         path: '/profile',
         name: 'profile',
         component: ProfileView,
-        meta: { requiresAuth: true } // Assuming you protect authenticated routes
+        meta: { requiresAuth: true }
     },
     {
         path: '/forgot-password',
@@ -41,6 +55,35 @@ const routes = [
         name: 'ResetPassword',
         component: () => import('../views/ResetPasswordView.vue')
     },
+    {
+        path: '/search',
+        name: 'Search',
+        component: () => import('../views/SearchView.vue'),
+        meta: { requiresAuth: true }
+    },
+    {
+        path: '/activity',
+        name: 'Activity',
+        component: () => import('../views/ActivityView.vue'),
+        meta: { requiresAuth: true }
+    },
+    {
+        path: '/archived',
+        name: 'ArchivedBoards',
+        component: () => import('../views/ArchivedBoardsView.vue'),
+        meta: { requiresAuth: true }
+    },
+    {
+        path: '/templates',
+        name: 'Templates',
+        component: () => import('../views/TemplatesView.vue'),
+        meta: { requiresAuth: true }
+    },
+    {
+        path: '/:pathMatch(.*)*',
+        name: 'NotFound',
+        component: () => import('../views/NotFoundView.vue')
+    }
 ];
 
 const router = createRouter({
@@ -53,7 +96,9 @@ router.beforeEach((to, from, next) => {
     const auth = useAuthStore();
 
     if (to.meta.requiresAuth && !auth.isAuthenticated) {
-        next('/login');
+        next('/welcome');
+    } else if (to.meta.guestOnly && auth.isAuthenticated) {
+        next('/');
     } else {
         next();
     }

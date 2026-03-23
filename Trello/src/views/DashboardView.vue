@@ -5,6 +5,18 @@
         <h1 class="brand-name">Trello Clone</h1>
       </div>
       <div class="header-right">
+        <router-link to="/search" class="btn-icon-nav" title="Search">
+          <SearchIcon :size="20" />
+        </router-link>
+        <router-link to="/activity" class="btn-icon-nav" title="Activity Feed">
+          <ActivityIcon :size="20" />
+        </router-link>
+        <router-link to="/templates" class="btn-icon-nav" title="Templates">
+          <CopyIcon :size="20" />
+        </router-link>
+        <router-link to="/archived" class="btn-icon-nav" title="Archived Boards">
+          <ArchiveIcon :size="20" />
+        </router-link>
         <router-link to="/profile" class="btn-icon-nav" title="Profile Settings">
           <SettingsIcon :size="20" />
         </router-link>
@@ -127,7 +139,11 @@ import {
   Bell as BellIcon,
   Users as UsersIcon,
   Edit2 as Edit2Icon,
-  Trash2 as Trash2Icon
+  Trash2 as Trash2Icon,
+  Search as SearchIcon,
+  Activity as ActivityIcon,
+  Copy as CopyIcon,
+  Archive as ArchiveIcon
 } from 'lucide-vue-next';
 
 const auth = useAuthStore();
@@ -264,6 +280,12 @@ onMounted(fetchBoards);
 .btn-logout-icon:hover {
   background: #fee2e2;
   color: #ef4444;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 
 .dashboard-section {
