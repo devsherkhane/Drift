@@ -1,10 +1,16 @@
 services:
-  # ---- MySQL Database ----
-  - type: database
+  # ---- MySQL Database (Docker) ----
+  - type: privateService
     name: drift-db
-    databaseName: drift
-    user: drift_user
+    env: docker
+    dockerContext: .
+    dockerFilePath: db.Dockerfile
     plan: free
+    envVars:
+      - key: MYSQL_ROOT_PASSWORD
+        value: rootpassword
+      - key: MYSQL_DATABASE
+        value: drift
 
   # ---- Go Backend ----
   - type: web
@@ -15,21 +21,13 @@ services:
     plan: free
     envVars:
       - key: DB_HOST
-        fromDatabase:
-          name: drift-db
-          property: host
+        value: drift-db:3306
       - key: DB_USER
-        fromDatabase:
-          name: drift-db
-          property: user
+        value: root
       - key: DB_PASSWORD
-        fromDatabase:
-          name: drift-db
-          property: password
+        value: rootpassword
       - key: DB_NAME
-        fromDatabase:
-          name: drift-db
-          property: database
+        value: drift
       - key: JWT_SECRET_KEY
         generateValue: true
       - key: PORT
