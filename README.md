@@ -15,7 +15,7 @@ A high-performance, real-time project management application featuring a **Go (G
 * **User Profiles:** Individualized account management including avatar customization and security settings.
 
 ---
- 
+  
 ## Technical Architecture
 
 ### Frontend
