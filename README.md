@@ -4,7 +4,7 @@ A high-performance, real-time project management application featuring a **Go (G
  
 --- 
       
-## Key Features   
+## Key Features    
 
 * **Real-Time Synchronization:** Utilizes WebSockets for instant state updates across all connected clients. Card movements and content edits are reflected globally in real-time.
 * **Drag-and-Drop Interface:** Fluid task organization and list reordering for intuitive workflow management.
