@@ -17,7 +17,7 @@ A high-performance, real-time project management application featuring a **Go (G
 ---
   
 ## Technical Architecture
-
+ 
 ### Frontend
 * **Vue 3:** Built with the Composition API and `<script setup>` for optimal performance and maintainability.
 * **Vite:** Used as the build tool for rapid development and optimized production bundling.
