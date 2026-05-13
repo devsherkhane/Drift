@@ -14,7 +14,7 @@ A high-performance, real-time project management application featuring a **Go (G
 * **Advanced Filtering:** High-speed search functionality to locate specific cards and tasks across multiple workspaces.
 * **User Profiles:** Individualized account management including avatar customization and security settings.
 
----
+--- 
   
 ## Technical Architecture
  
